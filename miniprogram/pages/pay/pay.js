@@ -1,0 +1,124 @@
+// pages/pay/pay.js
+Page({
+  data: {
+    orderNo: '',
+    totalPrice: 0,
+    totalCount: 0,
+    createTime: '',
+    countdown: 900, // 15分钟 = 900秒
+    countdownDisplay: '15:00',
+    timer: null
+  },
+
+  onLoad(options) {
+    if (options.orderNo) {
+      const now = new Date();
+      const createTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      this.setData({
+        orderNo: options.orderNo,
+        totalPrice: parseFloat(options.totalPrice) || 0,
+        totalCount: parseInt(options.totalCount) || 0,
+        createTime
+      });
+
+      // 启动倒计时
+      this.startCountdown();
+    }
+  },
+
+  onUnload() {
+    // 页面卸载时清除定时器
+    if (this.data.timer) {
+      clearInterval(this.data.timer);
+    }
+  },
+
+  // 启动倒计时
+  startCountdown() {
+    const timer = setInterval(() => {
+      let countdown = this.data.countdown - 1;
+      
+      if (countdown <= 0) {
+        clearInterval(this.data.timer);
+        this.setData({
+          countdown: 0,
+          countdownDisplay: '00:00'
+        });
+        wx.showModal({
+          title: '订单已超时',
+          content: '请重新下单',
+          showCancel: false,
+          success: () => {
+            wx.redirectTo({
+              url: '/pages/index/index'
+            });
+          }
+        });
+        return;
+      }
+
+      const minutes = Math.floor(countdown / 60);
+      const seconds = countdown % 60;
+      const countdownDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      this.setData({
+        countdown,
+        countdownDisplay
+      });
+    }, 1000);
+
+    this.setData({ timer });
+  },
+
+  // 立即支付
+  payNow() {
+    wx.showLoading({
+      title: '支付中...',
+      mask: true
+    });
+
+    // 模拟支付过程
+    setTimeout(() => {
+      wx.hideLoading();
+      
+      // 清除定时器
+      if (this.data.timer) {
+        clearInterval(this.data.timer);
+      }
+
+      // 跳转到支付结果页
+      wx.redirectTo({
+        url: `/pages/result/result?success=true&orderNo=${this.data.orderNo}&totalPrice=${this.data.totalPrice}&totalCount=${this.data.totalCount}`
+      });
+    }, 1500);
+  },
+
+  // 取消订单
+  cancelOrder() {
+    wx.showModal({
+      title: '提示',
+      content: '确定要取消订单吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除定时器
+          if (this.data.timer) {
+            clearInterval(this.data.timer);
+          }
+
+          wx.showToast({
+            title: '订单已取消',
+            icon: 'success',
+            duration: 1500
+          });
+
+          setTimeout(() => {
+            wx.redirectTo({
+              url: '/pages/index/index'
+            });
+          }, 1500);
+        }
+      }
+    });
+  }
+});
