@@ -1,6 +1,6 @@
 # AI课程购买微信小程序
 
-一个完整的微信小程序AI课程商城项目，包含课程浏览、购物车、订单确认、支付和支付结果页面。
+一个完整的微信小程序AI课程商城项目，使用**微信云托管**部署 Node.js 后端服务。
 
 ## ✨ 功能特性
 
@@ -18,43 +18,22 @@
 
 ```
 wx111/
-├── cloudfunctions/              # 云函数目录
-│   └── createOrder/             # 创建订单云函数
-│       ├── index.js             # 云函数逻辑
-│       └── package.json         # 依赖配置
 ├── miniprogram/                 # 小程序主目录
 │   ├── pages/                   # 页面文件
 │   │   ├── index/               # 首页-课程列表
-│   │   │   ├── index.js
-│   │   │   ├── index.json
-│   │   │   ├── index.wxml
-│   │   │   └── index.wxss
 │   │   ├── cart/                # 购物车页面
-│   │   │   ├── cart.js
-│   │   │   ├── cart.json
-│   │   │   ├── cart.wxml
-│   │   │   └── cart.wxss
 │   │   ├── order/               # 订单确认页面
-│   │   │   ├── order.js
-│   │   │   ├── order.json
-│   │   │   ├── order.wxml
-│   │   │   └── order.wxss
 │   │   ├── pay/                 # 支付页面
-│   │   │   ├── pay.js
-│   │   │   ├── pay.json
-│   │   │   ├── pay.wxml
-│   │   │   └── pay.wxss
 │   │   └── result/              # 支付结果页面
-│   │       ├── result.js
-│   │       ├── result.json
-│   │       ├── result.wxml
-│   │       └── result.wxss
 │   ├── images/                  # 图片资源目录
-│   │   └── .gitkeep
 │   ├── app.js                   # 小程序逻辑
 │   ├── app.json                 # 小程序配置
 │   ├── app.wxss                 # 全局样式
 │   └── sitemap.json             # 站点地图
+├── Dockerfile                   # Docker 容器配置
+├── container.config.json        # 云托管配置文件
+├── package.json                 # Node.js 后端依赖
+├── server.js                    # Express 后端服务
 ├── project.config.json          # 项目配置
 ├── .gitignore                   # Git忽略文件
 └── README.md                    # 项目说明文档
@@ -88,44 +67,127 @@ cd wx111
 3. 选择项目目录
 4. 填写你的 AppID（测试时可使用测试号）
 
-## ☁️ 云开发配置
+## ☁️ 微信云托管部署
 
-### 1. 开通云开发
+### 1. 开通云托管
 
 1. 在微信开发者工具中，点击顶部菜单栏的"云开发"按钮
-2. 首次使用需要开通云开发
-3. 创建云环境（建议环境名称：`ai-course-prod`）
-4. 等待环境初始化完成（约1-3分钟）
+2. 进入云开发控制台
+3. 选择"云托管"标签页
+4. 首次使用需要开通云托管服务
+5. 创建云托管环境（建议环境名称：`ai-course-prod`）
+6. 等待环境初始化完成（约1-3分钟）
 
-### 2. 获取云环境ID
+### 2. 创建云托管服务
 
-1. 在云开发控制台，点击"设置"
-2. 找到"环境ID"并复制
+1. 在云托管控制台，点击"新建服务"
+2. 填写服务配置：
+   - 服务名称：`ai-course-server`
+   - 镜像仓库：选择"使用微信云托管提供的镜像仓库"
+   - 服务端口：`80`（与 Dockerfile 中的 EXPOSE 保持一致）
+3. 点击"确定"创建服务
+
+### 3. 配置服务器地址
+
+部署完成后，获取云托管服务的访问地址：
+
+1. 在云托管控制台找到你的服务
+2. 复制服务的默认域名（格式：`https://your-service-id.service.tcloudbase.com`）
 3. 打开 `miniprogram/app.js` 文件
-4. 将 `YOUR_CLOUD_ENV_ID` 替换为你的云环境ID：
+4. 将 `serverUrl` 替换为你的云托管服务地址：
 
 ```javascript
-wx.cloud.init({
-  env: 'your-env-id-here', // 替换为你的云环境ID
-  traceUser: true,
-});
+globalData: {
+  serverUrl: 'https://your-service-id.service.tcloudbase.com',
+  // ...
+}
 ```
 
-### 3. 创建数据库集合
+### 4. 部署后端服务
 
-1. 在云开发控制台，点击"数据库"
-2. 点击"添加集合"
-3. 创建名为 `orders` 的集合
-4. 设置集合权限：
-   - 读权限：仅创建者可读
-   - 写权限：仅创建者可写
+有两种方式部署后端服务：
 
-### 4. 部署云函数
+#### 方式一：使用微信开发者工具部署
 
-1. 在微信开发者工具左侧，找到 `cloudfunctions` 目录
-2. 右键点击 `createOrder` 文件夹
-3. 选择"上传并部署：云端安装依赖（不上传node_modules）"
-4. 等待部署完成
+1. 在微信开发者工具中，点击"云开发"按钮
+2. 进入"云托管"标签页
+3. 选择你创建的服务
+4. 点击"上传代码"
+5. 选择项目根目录
+6. 等待构建和部署完成
+
+#### 方式二：使用命令行部署
+
+```bash
+# 安装微信云托管 CLI 工具
+npm install -g @cloudbase/cli
+
+# 登录云托管
+tcb login
+
+# 部署服务
+tcb run deploy --service-name ai-course-server
+```
+
+### 5. 环境变量设置（可选）
+
+如果需要配置环境变量（如数据库连接等）：
+
+1. 在云托管控制台，选择你的服务
+2. 进入"环境变量"设置
+3. 添加需要的环境变量
+4. 保存并重新部署服务
+
+### 6. 数据库配置（可选）
+
+当前项目使用内存存储订单数据（仅用于演示）。生产环境建议使用数据库：
+
+#### 使用云数据库 MySQL
+
+1. 在云开发控制台，开通"云数据库 MySQL"
+2. 创建数据库实例
+3. 创建 `orders` 表：
+
+```sql
+CREATE TABLE orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_no VARCHAR(50) UNIQUE NOT NULL,
+  items JSON NOT NULL,
+  total_price DECIMAL(10, 2) NOT NULL,
+  total_count INT NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  pay_time DATETIME,
+  INDEX idx_order_no (order_no),
+  INDEX idx_create_time (create_time)
+);
+```
+
+4. 在云托管服务中配置环境变量：
+   - `DB_HOST`: 数据库主机地址
+   - `DB_PORT`: 数据库端口
+   - `DB_USER`: 数据库用户名
+   - `DB_PASSWORD`: 数据库密码
+   - `DB_NAME`: 数据库名称
+
+5. 修改 `server.js` 使用 MySQL 存储（参考 mysql2 文档）
+
+### 7. 验证部署
+
+1. 在云托管控制台查看服务状态，确保服务正在运行
+2. 访问健康检查接口：`https://your-service-id.service.tcloudbase.com/`
+3. 应该返回类似以下的 JSON 响应：
+
+```json
+{
+  "status": "ok",
+  "message": "AI Course Server is running",
+  "timestamp": "2025-12-11T06:18:23.382Z"
+}
+```
+
+4. 在微信开发者工具中测试小程序功能
 
 ## 🖼️ 图片资源准备
 
@@ -156,9 +218,23 @@ wx.cloud.init({
 
 ## 🔧 本地运行
 
-1. 确保已完成云开发配置
-2. 确保已准备好所需图片资源
-3. 在微信开发者工具中点击"编译"按钮
+### 后端服务本地调试
+
+```bash
+# 安装依赖
+npm install
+
+# 启动服务器
+npm start
+```
+
+服务器将在 `http://localhost:80` 上运行。
+
+### 小程序本地调试
+
+1. 确保已配置好服务器地址（开发环境可以使用 `http://localhost:80`）
+2. 在微信开发者工具中打开项目
+3. 点击"编译"按钮
 4. 在模拟器中查看运行效果
 5. 也可以点击"预览"生成二维码，在手机上测试
 
@@ -187,20 +263,21 @@ wx.cloud.init({
 ### 安全提示
 
 - ⚠️ **不要泄露AppSecret** - AppSecret是敏感信息，不要上传到公开的Git仓库
-- ⚠️ **数据库权限** - 生产环境需要合理配置数据库权限，避免数据泄露
-- ⚠️ **云函数安全** - 云函数需要对输入参数进行验证，防止恶意调用
+- ⚠️ **服务器安全** - 生产环境需要配置合理的访问控制和请求验证
+- ⚠️ **数据安全** - 使用数据库存储敏感数据，避免使用内存存储
 
 ### 项目配置
 
 - 本项目使用的AppID (`wx3b4a96add4a64565`) 仅为示例
 - 实际使用时需要替换为你自己的AppID
-- 云环境ID需要替换为你自己的云环境ID
+- 云托管服务地址需要替换为你自己的服务地址
 
 ### 开发建议
 
 - 使用真机调试测试支付流程
-- 定期备份云数据库数据
-- 开发环境和生产环境使用不同的云环境
+- 定期备份数据库数据
+- 开发环境和生产环境使用不同的云托管服务
+- 配置服务监控和日志告警
 
 ## 💳 真实微信支付集成
 
@@ -223,20 +300,20 @@ wx.cloud.init({
 
 ### 开发步骤
 
-1. **创建支付云函数**
-   - 创建新的云函数 `payment`
-   - 安装 `tenpay` 或类似的微信支付SDK
+1. **安装微信支付SDK**
+   ```bash
+   npm install tenpay
+   ```
+
+2. **修改 server.js 集成支付**
    - 实现统一下单接口
-
-2. **修改订单流程**
-   - 在 `pages/order/order.js` 中调用支付云函数
-   - 获取支付参数后调用 `wx.requestPayment()`
-   - 处理支付回调结果
-
-3. **支付结果处理**
-   - 配置支付结果通知URL
-   - 创建云函数接收微信支付回调
+   - 处理支付回调
    - 更新订单状态
+
+3. **修改小程序支付流程**
+   - 调用后端获取支付参数
+   - 使用 `wx.requestPayment()` 发起支付
+   - 处理支付结果
 
 ### 参考文档
 
@@ -246,9 +323,9 @@ wx.cloud.init({
 ## 📝 技术栈
 
 - 微信小程序原生框架
-- 微信云开发
-- 云函数 (Node.js)
-- 云数据库 (MongoDB)
+- 微信云托管
+- Node.js + Express
+- Docker 容器化部署
 
 ## 🤝 贡献
 

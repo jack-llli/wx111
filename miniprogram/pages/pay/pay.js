@@ -79,20 +79,45 @@ Page({
       mask: true
     });
 
-    // 模拟支付过程
-    setTimeout(() => {
-      wx.hideLoading();
-      
-      // 清除定时器
-      if (this.data.timer) {
-        clearInterval(this.data.timer);
-      }
+    const app = getApp();
+    const serverUrl = app.globalData.serverUrl;
 
-      // 跳转到支付结果页
-      wx.redirectTo({
-        url: `/pages/result/result?success=true&orderNo=${this.data.orderNo}&totalPrice=${this.data.totalPrice}&totalCount=${this.data.totalCount}`
-      });
-    }, 1500);
+    // 调用后端支付 API
+    wx.request({
+      url: `${serverUrl}/api/pay`,
+      method: 'POST',
+      data: {
+        orderNo: this.data.orderNo
+      },
+      success: (res) => {
+        wx.hideLoading();
+        
+        // 清除定时器
+        if (this.data.timer) {
+          clearInterval(this.data.timer);
+        }
+
+        if (res.data.success) {
+          // 跳转到支付结果页
+          wx.redirectTo({
+            url: `/pages/result/result?success=true&orderNo=${this.data.orderNo}&totalPrice=${this.data.totalPrice}&totalCount=${this.data.totalCount}`
+          });
+        } else {
+          wx.showToast({
+            title: res.data.message || '支付失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.error('支付失败', err);
+        wx.showToast({
+          title: '支付失败，请重试',
+          icon: 'none'
+        });
+      }
+    });
   },
 
   // 取消订单

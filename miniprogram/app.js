@@ -1,16 +1,6 @@
 // app.js
 App({
   onLaunch() {
-    // 初始化云开发
-    if (!wx.cloud) {
-      console.error('请使用 2.2.3 或以上的基础库以使用云能力');
-    } else {
-      wx.cloud.init({
-        env: 'YOUR_CLOUD_ENV_ID', // 请填写您的云开发环境ID
-        traceUser: true,
-      });
-    }
-
     // 从本地存储恢复购物车
     const cart = wx.getStorageSync('cart');
     if (cart) {
@@ -19,6 +9,9 @@ App({
   },
 
   globalData: {
+    // 云托管服务器地址（请替换为你的云托管服务地址）
+    serverUrl: 'https://your-service-id.service.tcloudbase.com',
+    
     // 课程数据
     courses: [
       {

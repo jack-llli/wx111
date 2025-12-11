@@ -42,25 +42,33 @@ Page({
       mask: true
     });
 
-    // 调用云函数创建订单
-    wx.cloud.callFunction({
-      name: 'createOrder',
+    const app = getApp();
+    const serverUrl = app.globalData.serverUrl;
+
+    // 调用后端 API 创建订单
+    wx.request({
+      url: `${serverUrl}/api/orders`,
+      method: 'POST',
       data: {
-        items: this.data.items,
+        items: this.data.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.count
+        })),
         totalPrice: this.data.finalPrice,
         totalCount: this.data.totalCount
       },
       success: (res) => {
         wx.hideLoading();
-        if (res.result.success) {
+        if (res.data.success) {
           // 创建成功，跳转到支付页
-          const order = res.result.data;
           wx.redirectTo({
-            url: `/pages/pay/pay?orderNo=${order.orderNo}&totalPrice=${order.totalPrice}&totalCount=${order.totalCount}`
+            url: `/pages/pay/pay?orderNo=${res.data.orderNo}&totalPrice=${this.data.finalPrice}&totalCount=${this.data.totalCount}`
           });
         } else {
           wx.showToast({
-            title: res.result.message || '订单创建失败',
+            title: res.data.message || '订单创建失败',
             icon: 'none'
           });
         }

@@ -1,0 +1,5 @@
+{
+  "containerPort": 80,
+  "dockerfilePath": "Dockerfile",
+  "buildDir": ""
+}
