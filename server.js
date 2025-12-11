@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = 80;
+const PORT = process.env.PORT || 80;
 
 // 中间件
 app.use(cors());
@@ -40,9 +40,26 @@ const courses = [
 // 订单存储（内存）
 const orders = new Map();
 
+// 访问计数器
+let visitCount = 0;
+
 // 健康检查
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'AI课程商城服务运行中' });
+  res.json({ 
+    status: 'ok', 
+    message: 'AI课程商城服务运行中',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 获取访问计数
+app.get('/api/count', (req, res) => {
+  visitCount++;
+  res.json({ 
+    success: true, 
+    count: visitCount,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 获取课程列表
@@ -108,13 +125,53 @@ app.post('/api/pay', (req, res) => {
   }
   
   order.status = 'paid';
-  order.updateTime = new Date().toISOString();
+  const now = new Date();
+  order.updateTime = now.getFullYear() + '-' + 
+    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(now.getDate()).padStart(2, '0') + ' ' + 
+    String(now.getHours()).padStart(2, '0') + ':' + 
+    String(now.getMinutes()).padStart(2, '0') + ':' + 
+    String(now.getSeconds()).padStart(2, '0');
+  
   orders.set(orderNo, order);
   
   res.json({ success: true, message: '支付成功' });
 });
 
+// 404 处理
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: '接口不存在',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// 错误处理
+app.use((err, req, res, next) => {
+  console.error('服务器错误:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: '服务器内部错误',
+    error: err.message
+  });
+});
+
 // 启动服务器
-app.listen(PORT, () => {
-  console.log(`AI课程商城服务已启动，监听端口 ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`AI课程商城服务已启动`);
+  console.log(`监听端口: ${PORT}`);
+  console.log(`启动时间: ${new Date().toISOString()}`);
+});
+
+// 优雅退出
+process.on('SIGTERM', () => {
+  console.log('收到 SIGTERM 信号，准备关闭服务...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('收到 SIGINT 信号，准备关闭服务...');
+  process.exit(0);
 });
