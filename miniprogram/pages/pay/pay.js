@@ -40,10 +40,11 @@ Page({
       let countdown = this.data.countdown - 1;
       
       if (countdown <= 0) {
-        clearInterval(this.data.timer);
+        clearInterval(timer);
         this.setData({
           countdown: 0,
-          countdownDisplay: '00:00'
+          countdownDisplay: '00:00',
+          timer: null
         });
         wx.showModal({
           title: '订单已超时',

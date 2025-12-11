@@ -24,6 +24,28 @@ exports.main = async (event, context) => {
   try {
     const { items, totalPrice, totalCount } = event;
 
+    // 验证输入参数
+    if (!Array.isArray(items) || items.length === 0) {
+      return {
+        success: false,
+        message: '商品列表不能为空'
+      };
+    }
+
+    if (typeof totalPrice !== 'number' || totalPrice <= 0) {
+      return {
+        success: false,
+        message: '订单金额无效'
+      };
+    }
+
+    if (typeof totalCount !== 'number' || totalCount <= 0 || !Number.isInteger(totalCount)) {
+      return {
+        success: false,
+        message: '商品数量无效'
+      };
+    }
+
     // 生成订单号
     const orderNo = generateOrderNo();
 
